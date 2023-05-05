@@ -17,14 +17,13 @@ export const addPeople = async (
   onSuccess: ([...args]?: any) => void,
   onError: ([...args]?: any) => void
 ) => {
-  const { data, error } = await supabase.from("people").insert([sentData]);
-  if (data) {
-    onSuccess();
-    return;
-  }
+  const { error } = await supabase.from("people").insert([sentData]);
   if(error){
     console.log(error)
+    onError();
+    return;
   }
-  onError();
+  onSuccess();
   return;
+
 };

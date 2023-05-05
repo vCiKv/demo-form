@@ -2,6 +2,8 @@ import createClass from "@/lib/createClass";
 import { Inter } from "next/font/google";
 import { FormEvent, HTMLInputTypeAttribute, useState } from "react";
 import supabase from "@/lib/supaClient";
+import Link from "next/link";
+import { addPeople } from "@/lib/people";
 const inter = Inter({ subsets: ["latin"] });
 
 type InputProps = {
@@ -48,7 +50,11 @@ const useInput = <T extends { name: string }>(
   };
   return [formData, changeFormData];
 };
-export default function Home() {
+const TestForm = ({
+  setIsSubmitted,
+}: {
+  setIsSubmitted: (val?: any) => void;
+}) => {
   const formInput: Omit<InputProps, "value" | "onChange">[] = [
     {
       name: "name",
@@ -61,18 +67,6 @@ export default function Home() {
       label: "request amount",
     },
   ];
-  // const convertToEmptyState = (arr: { name: string; [key: string]: any }[]) => {
-  //   let newArr: { [key: string]: string } = {};
-  //   arr.forEach((item) => {
-  //     newArr[item.name] = "";
-  //   });
-  //   return newArr;
-  // };
-  // console.log("state is", convertToEmptyState(formInput));
-  // const [formData, setFormData] = useState(convertToEmptyState(formInput));
-  // const changeFormData = (val: string | number, key: string) => {
-  //   setFormData((p) => ({ ...p, [key]: val }));
-  // };
   const errorMessages = {
     createNoInput: (field: string) => "please fill missing field: " + field,
     createInvalidInput: (field: string) => "invalid input in field: " + field,
@@ -86,6 +80,7 @@ export default function Home() {
       } ${limit} characters`,
   };
   const [formData, changeFormData] = useInput(formInput);
+  const [loading, setLoading] = useState(false);
   const submitForm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     for (const input in formData) {
@@ -100,61 +95,81 @@ export default function Home() {
       alert(errorMessages.createInvalidInput("amount"));
       return null;
     }
+    console.log("name:", name, ":", name.length);
     if (name.length > 30) {
       alert(errorMessages.createInvalidLength("name", 30, "long"));
       return null;
     }
-    if (name.length > 5) {
+    if (name.length < 5) {
       alert(errorMessages.createInvalidLength("name", 5, "short"));
       return null;
     }
-    addPeople({name,amount},()=>alert("successful"),()=>alert("failed to submit"))
-    alert(1);
+    setLoading(true);
+    addPeople(
+      { name, amount },
+      () => {
+        alert("successful");
+        setIsSubmitted(true);
+      },
+      () => alert("failed to submit")
+    );
+    setLoading(false);
   };
-  const addPeople = async (
-    sentData: {},
-    onSuccess: ([...args]?: any) => void,
-    onError: ([...args]?: any) => void
-  ) => {
-    const { data, error } = await supabase.from("people").insert([sentData]);
-    if (data) {
-      onSuccess();
-      return;
-    }
-    if(error){
-      console.log(error)
-    }
-    onError();
-    return;
+
+  return (
+    <div className="card bg-slate-900 p-4 shadow-lg">
+      {loading && <Loading />}
+      <form className="form-control" onSubmit={submitForm}>
+        <h2 className="text-2xl font-bold mb-12 mt-6 text-center">Test Form</h2>
+        {formInput.map((input) => (
+          <Input
+            key={input.name}
+            name={input.name}
+            label={input.label}
+            value={formData[input.name]}
+            onChange={changeFormData}
+            type={input.type}
+          />
+        ))}
+        <button className="btn">submit</button>
+      </form>
+    </div>
+  );
+};
+const Loading = () => {
+  return (
+    <div className="z-50 block fixed top-0 left-0 bg-slate-800 card w-full h-full">
+      <div className="p-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+        <progress className="progress w-56"></progress>
+        <br />
+        <span className="font-black font-xl">loading...</span>
+      </div>
+    </div>
+  );
+};
+export default function Home() {
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const FormComplete = () => {
+    return (
+      <div className="card bg-slate-900 md:w-full min-w-2/5 text-center p-24 mx-10 block">
+        <h2>Thank you for your Application</h2>
+        <Link className="link my-12 block text-2xl" href={"/applications"}>
+          View Applications
+        </Link>
+      </div>
+    );
   };
-  const getPeople = async () => {
-    let { data: people, error } = await supabase
-      .from("people")
-      .select("amount,name");
-    console.log('data:',people);
-    console.error('error',error)
-  }
   return (
     <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+      className={`flex min-h-screen flex-col items-center justify-between pt-24 md:p-24 ${inter.className}`}
     >
-      <div className="card bg-slate-900 p-4 shadow-lg">
-        <form className="form-control" onSubmit={submitForm}>
-          {formInput.map((input) => (
-            <Input
-              key={input.name}
-              name={input.name}
-              label={input.label}
-              value={formData[input.name]}
-              onChange={changeFormData}
-              type={input.type}
-            />
-          ))}
-          <button className="btn" onClick={() => getPeople()}>
-            submit
-          </button>
-        </form>
-      </div>
+      {/* <Loading/> */}
+      {isSubmitted ? (
+        <FormComplete />
+      ) : (
+        <TestForm setIsSubmitted={setIsSubmitted} />
+      )}
     </main>
   );
 }

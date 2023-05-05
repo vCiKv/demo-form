@@ -2,7 +2,7 @@ import { getPeople } from "@/lib/people"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 const Application = ()=>{
-  type PersonType = {id:any, name:string,amount:string}
+  type PersonType = {id:any, name:string,amount:number}
   const [people,setPeople] = useState<PersonType[] | null>(null)
   
   useEffect (()=>{
@@ -16,7 +16,7 @@ const Application = ()=>{
     return (  
       <div className="overflow-x-auto p-10">
         <h2 className="text-2xl font-bold mb-12 mt-6 text-center">Form Applications</h2>
-        <table className="table w-full border border-slate-800 rounded-xl">
+        <table className="table w-full border border-slate-800 rounded-xl shadow-2xl">
           <thead>
             <tr>
               <th>name</th>
@@ -24,7 +24,7 @@ const Application = ()=>{
             </tr>
           </thead>
           <tbody>
-            {people.map(person=><tr key={person.id} className="hover:active"><th>{person.name}</th><th>{person.amount}</th></tr>)}
+            {people.map(person=><tr key={person.id} className="hover:active"><th>{person.name}</th><th>{person.amount.toLocaleString("US-en")}</th></tr>)}
           </tbody>
         </table>
         <Link className="link my-12 mx-auto block text-2xl text-center" href="/">Go Home</Link>
